@@ -4,6 +4,9 @@ const links = [
   { href: "/", label: "Home" },
   { href: "/search", label: "Search" },
   { href: "/library", label: "Library" },
+  { href: "/reports", label: "Reports" },
+  { href: "/briefs", label: "Briefs" },
+  { href: "/workspaces", label: "Workspaces" },
 ];
 
 export function SiteNav() {

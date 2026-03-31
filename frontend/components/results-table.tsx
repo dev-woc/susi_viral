@@ -69,7 +69,7 @@ export function ResultsTable({ results, searchId, partialFailures = [] }: Result
                       <div className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Virality</div>
                       <div className="text-2xl font-semibold text-white">{clip.content_dna.virality_score}</div>
                     </div>
-                    <SaveToLibraryButton clipId={clip.id} saved={clip.saved} />
+                    <SaveToLibraryButton clipId={clip.id} contentDnaId={clip.content_dna_id} saved={clip.saved} />
                   </div>
                 </div>
                 <ContentDnaCard contentDna={clip.content_dna} />

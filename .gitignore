@@ -1,11 +1,17 @@
 .DS_Store
 __pycache__/
 *.pyc
+*.egg-info/
 .pytest_cache/
 .mypy_cache/
 
 frontend/node_modules/
 frontend/.next/
+.env
+.env.*
+!.env.example
+!*.env.example
+backend/.venv/
 
 viral_content_agent.db
 backend/debug_reports.db

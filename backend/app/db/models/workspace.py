@@ -23,3 +23,4 @@ class Workspace(Base):
     library_items: Mapped[list["LibraryItem"]] = relationship(back_populates="workspace")
     collections: Mapped[list["Collection"]] = relationship(back_populates="workspace")
     scheduled_reports: Mapped[list["ScheduledReport"]] = relationship(back_populates="workspace")
+    memberships: Mapped[list["WorkspaceMembership"]] = relationship()

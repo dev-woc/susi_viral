@@ -15,6 +15,8 @@ export const demoSearchResponse: SearchResponse = {
       summary: "Fast-paced recipe proof, direct pay-off, and a visible transformation in under 20 seconds.",
       saved: false,
       content_dna: {
+        id: 101,
+        raw_clip_id: 201,
         schema_version: "v1",
         clip_id: "clip_01",
         source_url: "https://tiktok.com/@studiobites/video/123",
@@ -29,6 +31,7 @@ export const demoSearchResponse: SearchResponse = {
         cta: "Save this for Sunday prep",
         replication_notes: "Lead with the outcome, then reveal ingredients after the first beat.",
         pattern_tags: ["hook-proof", "quick-cut", "save-worthy"],
+        confidence: 0.92,
       },
     },
     {
@@ -40,6 +43,8 @@ export const demoSearchResponse: SearchResponse = {
       summary: "Clean voiceover, overhead shots, and a repeatable list structure that supports retention.",
       saved: true,
       content_dna: {
+        id: 102,
+        raw_clip_id: 202,
         schema_version: "v1",
         clip_id: "clip_02",
         source_url: "https://youtube.com/shorts/abc",
@@ -54,6 +59,7 @@ export const demoSearchResponse: SearchResponse = {
         cta: "Comment 'pan' and I’ll send the list",
         replication_notes: "Keep the first two seconds purely visual, then layer the list on top.",
         pattern_tags: ["listicle", "voiceover", "comment-cta"],
+        confidence: 0.88,
       },
     },
     {
@@ -65,6 +71,8 @@ export const demoSearchResponse: SearchResponse = {
       summary: "Narrative pivot from budget fear to confidence, with a strong before/after payoff.",
       saved: false,
       content_dna: {
+        id: 103,
+        raw_clip_id: 203,
         schema_version: "v1",
         clip_id: "clip_03",
         source_url: "https://tiktok.com/@freshframe/video/456",
@@ -79,6 +87,7 @@ export const demoSearchResponse: SearchResponse = {
         cta: "Follow for more realistic hauls",
         replication_notes: "Open with the emotional tension before showing any item.",
         pattern_tags: ["storytime", "before-after", "follow-cta"],
+        confidence: 0.84,
       },
     },
   ],
@@ -90,6 +99,7 @@ export const demoSearchResponse: SearchResponse = {
 export const demoLibraryItems: LibraryItem[] = [
   {
     id: "lib_01",
+    content_dna_id: 101,
     saved_at: "2026-03-29T09:00:00Z",
     notes: "Use the hook structure in a transformation reel.",
     title: "3-second hook meal prep breakdown",
@@ -100,6 +110,7 @@ export const demoLibraryItems: LibraryItem[] = [
   },
   {
     id: "lib_02",
+    content_dna_id: 102,
     saved_at: "2026-03-29T10:15:00Z",
     notes: "Good example of a list format with a clear CTA.",
     title: "One pan lunches that sell the lifestyle",

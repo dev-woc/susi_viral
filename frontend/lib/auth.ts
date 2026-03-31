@@ -11,8 +11,15 @@ export type AuthState = {
   user: AuthUser | null;
 };
 
+const DEV_BYPASS_USER: AuthUser = {
+  id: "dev-user",
+  name: "Local User",
+  email: null,
+  workspaceName: "Default Workspace",
+};
+
 export const DEFAULT_AUTH_STATE: AuthState = {
   isLoaded: true,
-  isSignedIn: false,
-  user: null,
+  isSignedIn: true,
+  user: DEV_BYPASS_USER,
 };

@@ -5,17 +5,18 @@ import { saveLibraryItem } from "@/lib/api";
 
 interface SaveToLibraryButtonProps {
   clipId: string;
+  contentDnaId?: number;
   saved?: boolean;
 }
 
-export function SaveToLibraryButton({ clipId, saved = false }: SaveToLibraryButtonProps) {
+export function SaveToLibraryButton({ clipId, contentDnaId, saved = false }: SaveToLibraryButtonProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(saved);
 
   async function handleSave() {
     setIsSaving(true);
     try {
-      await saveLibraryItem({ clipId });
+      await saveLibraryItem(contentDnaId ? { clipId, contentDnaId } : { clipId });
       setIsSaved(true);
     } finally {
       setIsSaving(false);

@@ -1,4 +1,5 @@
 import type { Platform, ContentDNA } from "@/lib/types";
+import { buildUrl, getApiOrigin } from "@/lib/backend";
 
 export type ReportCadence = "daily" | "weekly" | "custom";
 export type DeliveryChannel = "dashboard" | "email" | "pdf";
@@ -6,6 +7,7 @@ export type ReportStatus = "scheduled" | "running" | "partial" | "complete" | "f
 
 export type ReportDefinition = {
   id: string;
+  backend_id?: number;
   name: string;
   query: string;
   platforms: Platform[];
@@ -16,6 +18,7 @@ export type ReportDefinition = {
   next_run_at: string | null;
   status: ReportStatus;
   pattern_summary: string;
+  pattern_deltas?: Record<string, number>;
 };
 
 export type ReportRun = {
@@ -27,6 +30,7 @@ export type ReportRun = {
   result_count: number;
   delivery_targets: DeliveryChannel[];
   notes: string;
+  pattern_deltas?: Record<string, number>;
 };
 
 export type ReportSummary = {
@@ -88,15 +92,6 @@ const DEFAULT_RUNS: ReportRun[] = [
   },
 ];
 
-function getApiOrigin(): string | null {
-  return process.env.INTERNAL_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? null;
-}
-
-function buildUrl(path: string): string | null {
-  const origin = getApiOrigin();
-  return origin ? new URL(path, origin).toString() : null;
-}
-
 export function parseReportSearchParams(params: ReportSearchParams = {}): {
   cadence: ReportCadence | "all";
   platform: Platform | "all";
@@ -140,7 +135,75 @@ export async function listReports(): Promise<ReportSummary> {
     if (!response.ok) {
       throw new Error(`Reports lookup failed with ${response.status}`);
     }
-    return (await response.json()) as ReportSummary;
+    const payload = (await response.json()) as {
+      items: Array<{
+        id: number;
+        report_id: string;
+        name: string;
+        query_text: string;
+        platforms: Platform[];
+        cadence: ReportCadence;
+        result_limit: number;
+        delivery_channels: DeliveryChannel[];
+        last_run_at: string | null;
+        next_run_at: string | null;
+        latest_run: {
+          report_run_id: string;
+          created_at: string;
+          completed_at: string | null;
+          status: ReportStatus;
+          total_ranked: number;
+          deliveries: Array<{ channel: DeliveryChannel }>;
+          pattern_deltas: Record<string, number>;
+          pattern_summary: Record<string, number>;
+        } | null;
+      }>;
+    };
+
+    const reports = payload.items.map((report) => ({
+      id: report.report_id,
+      backend_id: report.id,
+      name: report.name,
+      query: report.query_text,
+      platforms: report.platforms.filter(
+        (platform): platform is Platform => platform === "tiktok" || platform === "youtube_shorts",
+      ),
+      cadence: report.cadence,
+      topN: report.result_limit,
+      deliveryChannels: report.delivery_channels,
+      last_run_at: report.last_run_at,
+      next_run_at: report.next_run_at,
+      status: report.latest_run?.status ?? "scheduled",
+      pattern_summary: summarizePatternSummary(report.latest_run?.pattern_summary ?? {}),
+      pattern_deltas: report.latest_run?.pattern_deltas ?? {},
+    }));
+
+    const recent_runs = payload.items
+      .flatMap((report) => {
+        if (!report.latest_run) {
+          return [];
+        }
+
+        return [
+          {
+            id: report.latest_run.report_run_id,
+            report_id: report.report_id,
+            started_at: report.latest_run.created_at,
+            finished_at: report.latest_run.completed_at,
+            status: report.latest_run.status,
+            result_count: report.latest_run.total_ranked,
+            delivery_targets:
+              report.latest_run.deliveries.length > 0
+                ? report.latest_run.deliveries.map((delivery) => delivery.channel)
+                : report.delivery_channels,
+            notes: summarizePatternSummary(report.latest_run.pattern_summary),
+            pattern_deltas: report.latest_run.pattern_deltas,
+          },
+        ];
+      })
+      .sort((left, right) => right.started_at.localeCompare(left.started_at));
+
+    return { reports, recent_runs };
   } catch {
     return {
       reports: DEFAULT_REPORTS,
@@ -176,7 +239,17 @@ export async function createReportDefinition(input: {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(input),
+      body: JSON.stringify({
+        name: input.name,
+        query_text: input.query,
+        platforms: input.platforms,
+        timeframe: "7d",
+        minimum_virality_score: 50,
+        result_limit: input.topN,
+        cadence: input.cadence,
+        delivery_channels: input.deliveryChannels,
+        enabled: true,
+      }),
       cache: "no-store",
     });
 
@@ -184,7 +257,35 @@ export async function createReportDefinition(input: {
       throw new Error(`Report create failed with ${response.status}`);
     }
 
-    return (await response.json()) as ReportDefinition;
+    const report = (await response.json()) as {
+      id: number;
+      report_id: string;
+      name: string;
+      query_text: string;
+      platforms: Platform[];
+      cadence: ReportCadence;
+      result_limit: number;
+      delivery_channels: DeliveryChannel[];
+      last_run_at: string | null;
+      next_run_at: string | null;
+    };
+
+    return {
+      id: report.report_id,
+      backend_id: report.id,
+      name: report.name,
+      query: report.query_text,
+      platforms: report.platforms.filter(
+        (platform): platform is Platform => platform === "tiktok" || platform === "youtube_shorts",
+      ),
+      cadence: report.cadence,
+      topN: report.result_limit,
+      deliveryChannels: report.delivery_channels,
+      last_run_at: report.last_run_at,
+      next_run_at: report.next_run_at,
+      status: "scheduled",
+      pattern_summary: "Scheduled report created from the backend.",
+    };
   } catch {
     return {
       id: `report_${Date.now()}`,
@@ -219,4 +320,16 @@ export function summarizeContentDna(contentDna: ContentDNA): string {
   const format = contentDna.format ?? "unspecified format";
   const hook = contentDna.hook ?? "unspecified hook";
   return `${hook} • ${format}`;
+}
+
+function summarizePatternSummary(summary: Record<string, number>): string {
+  const entries = Object.entries(summary)
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 3);
+
+  if (entries.length === 0) {
+    return "No pattern summary available yet.";
+  }
+
+  return entries.map(([key, value]) => `${key} (${value})`).join(", ");
 }

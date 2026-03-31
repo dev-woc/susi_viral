@@ -1,4 +1,5 @@
 import type { LibraryItem, Platform } from "@/lib/types";
+import { buildUrl, getApiOrigin, normalizeLibraryItem } from "@/lib/backend";
 
 export type LibrarySearchParams = Record<string, string | string[] | undefined>;
 
@@ -17,15 +18,6 @@ const DEFAULT_FILTER_STATE: LibraryFilterState = {
   format: "",
   tag: "",
 };
-
-function getApiOrigin(): string | null {
-  return process.env.INTERNAL_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? null;
-}
-
-function buildUrl(path: string): string | null {
-  const origin = getApiOrigin();
-  return origin ? new URL(path, origin).toString() : null;
-}
 
 export function isLibraryBackendConfigured(): boolean {
   return Boolean(getApiOrigin());
@@ -113,7 +105,23 @@ export function filterLibraryItems(items: LibraryItem[], filters: LibraryFilterS
 }
 
 export async function listLibrarySearchResults(filters: LibraryFilterState): Promise<LibraryItem[]> {
-  const endpoint = buildUrl("/api/library/search");
+  const params = new URLSearchParams();
+  if (filters.query.trim()) {
+    params.set("query", filters.query.trim());
+  }
+  if (filters.platform !== "all") {
+    params.set("platform", filters.platform);
+  }
+  if (filters.hook.trim()) {
+    params.set("hook", filters.hook.trim());
+  }
+  if (filters.format.trim()) {
+    params.set("format", filters.format.trim());
+  }
+  if (filters.tag.trim()) {
+    params.set("pattern_tag", filters.tag.trim());
+  }
+  const endpoint = buildUrl(`/api/library/search?${params.toString()}`);
 
   if (!endpoint) {
     return filterLibraryItems((await import("@/lib/mock-data")).demoLibraryItems, filters);
@@ -128,8 +136,8 @@ export async function listLibrarySearchResults(filters: LibraryFilterState): Pro
       throw new Error(`Library search failed with ${response.status}`);
     }
 
-    const payload = (await response.json()) as { items: LibraryItem[] };
-    return filterLibraryItems(payload.items, filters);
+    const payload = (await response.json()) as { items: Array<Record<string, unknown>> };
+    return filterLibraryItems(payload.items.map((item) => normalizeLibraryItem(item as never)), filters);
   } catch {
     const { demoLibraryItems } = await import("@/lib/mock-data");
     return filterLibraryItems(demoLibraryItems, filters);

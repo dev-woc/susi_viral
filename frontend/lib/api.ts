@@ -1,4 +1,5 @@
 import { demoLibraryItems, demoSearchResponse } from "@/lib/mock-data";
+import { buildUrl, getApiOrigin, normalizeLibraryItem, normalizeSearchResponse } from "@/lib/backend";
 import type {
   LibraryItem,
   LibraryResponse,
@@ -8,15 +9,7 @@ import type {
   Timeframe,
 } from "@/lib/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-
-function buildUrl(path: string) {
-  if (!API_BASE_URL) {
-    return path;
-  }
-
-  return new URL(path, API_BASE_URL).toString();
-}
+const API_BASE_URL = getApiOrigin();
 
 async function safeJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
@@ -33,12 +26,22 @@ export async function searchClips(request: SearchRequest): Promise<SearchRespons
   }
 
   try {
-    const response = await fetch(buildUrl("/api/search"), {
+    const endpoint = buildUrl("/api/search");
+    if (!endpoint) {
+      throw new Error("API endpoint unavailable");
+    }
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify({
+        query: request.query,
+        platforms: request.platforms,
+        timeframe: request.timeframe,
+        minimum_virality_score: request.minVirality,
+      }),
       cache: "no-store",
     });
 
@@ -46,7 +49,7 @@ export async function searchClips(request: SearchRequest): Promise<SearchRespons
       throw new Error(`Search failed with ${response.status}`);
     }
 
-    return await safeJson<SearchResponse>(response);
+    return normalizeSearchResponse(await safeJson(response));
   } catch {
     return {
       ...demoSearchResponse,
@@ -80,7 +83,12 @@ export async function listLibraryItems(filters?: {
   }
 
   try {
-    const response = await fetch(buildUrl(`/api/library/items?${searchParams.toString()}`), {
+    const endpoint = buildUrl(`/api/library/items?${searchParams.toString()}`);
+    if (!endpoint) {
+      throw new Error("API endpoint unavailable");
+    }
+
+    const response = await fetch(endpoint, {
       cache: "no-store",
     });
 
@@ -88,7 +96,17 @@ export async function listLibraryItems(filters?: {
       throw new Error(`Library lookup failed with ${response.status}`);
     }
 
-    return await safeJson<LibraryResponse>(response);
+    const items = (await safeJson<Array<Record<string, unknown>>>(response)).map((item) =>
+      normalizeLibraryItem(item as never),
+    );
+
+    return {
+      items,
+      filters: {
+        platform: filters?.platform ?? "all",
+        hook: filters?.hook ?? "all",
+      },
+    };
   } catch {
     return {
       items: demoLibraryItems,
@@ -102,6 +120,7 @@ export async function listLibraryItems(filters?: {
 
 export async function saveLibraryItem(input: {
   clipId: string;
+  contentDnaId?: number;
   notes?: string;
 }): Promise<LibraryItem> {
   if (!API_BASE_URL) {
@@ -120,12 +139,20 @@ export async function saveLibraryItem(input: {
   }
 
   try {
-    const response = await fetch(buildUrl("/api/library/items"), {
+    const endpoint = buildUrl("/api/library/items");
+    if (!endpoint || !input.contentDnaId) {
+      throw new Error("content_dna_id is required");
+    }
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(input),
+      body: JSON.stringify({
+        content_dna_id: input.contentDnaId,
+        note: input.notes,
+      }),
       cache: "no-store",
     });
 
@@ -133,11 +160,12 @@ export async function saveLibraryItem(input: {
       throw new Error(`Save failed with ${response.status}`);
     }
 
-    return await safeJson<LibraryItem>(response);
+    return normalizeLibraryItem(await safeJson(response));
   } catch {
     const source = demoSearchResponse.results.find((clip) => clip.id === input.clipId) ?? demoSearchResponse.results[0];
     return {
       id: `lib_${input.clipId}`,
+      content_dna_id: source.content_dna.id,
       saved_at: new Date().toISOString(),
       notes: input.notes ?? "Saved from frontend scaffold",
       title: source.title,

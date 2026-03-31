@@ -8,6 +8,8 @@ export const TIMEFRAME_VALUES = ["24h", "7d", "30d", "all"] as const satisfies r
 export type SearchTimeframe = Timeframe;
 
 export interface ContentDNA {
+  id?: number;
+  raw_clip_id?: number;
   schema_version: string;
   clip_id: string;
   source_url: string;
@@ -22,10 +24,13 @@ export interface ContentDNA {
   cta: string | null;
   replication_notes: string | null;
   pattern_tags: string[];
+  confidence?: number;
 }
 
 export interface SearchClip {
   id: string;
+  raw_clip_id?: number;
+  content_dna_id?: number;
   title: string;
   platform: Platform;
   creator: string;
@@ -60,6 +65,8 @@ export interface SearchRequest {
 
 export interface LibraryItem {
   id: string;
+  workspace_id?: number;
+  content_dna_id?: number;
   saved_at: string;
   notes: string | null;
   content_dna: ContentDNA;

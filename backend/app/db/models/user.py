@@ -22,3 +22,4 @@ class User(Base):
 
     workspace: Mapped["Workspace"] = relationship(back_populates="users")
     search_queries: Mapped[list["SearchQuery"]] = relationship(back_populates="user")
+    workspace_memberships: Mapped[list["WorkspaceMembership"]] = relationship()

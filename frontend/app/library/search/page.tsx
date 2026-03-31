@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LibraryFilterPanel } from "@/components/library-filter-panel";
 import {
   filterLibraryItems,
@@ -68,6 +69,22 @@ export default async function LibrarySearchPage({ searchParams = {} }: LibrarySe
                   </div>
                   <h3 className="text-2xl font-semibold text-white">{item.title}</h3>
                   <p className="max-w-3xl text-sm leading-6 text-slate-300">{item.notes}</p>
+                  {item.content_dna.id ? (
+                    <div className="flex flex-wrap gap-3">
+                      <Link
+                        href={`/library/similar/${item.content_dna.id}`}
+                        className="rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm text-amber-100 transition hover:border-amber-300/50"
+                      >
+                        Find similar clips
+                      </Link>
+                      <Link
+                        href={`/briefs?selectedClipIds=${item.content_dna.id}`}
+                        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:border-white/20 hover:bg-white/10"
+                      >
+                        Use in brief
+                      </Link>
+                    </div>
+                  ) : null}
                   <ContentDnaCard contentDna={item.content_dna} />
                 </div>
               </div>
