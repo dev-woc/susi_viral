@@ -1,0 +1,6 @@
+{
+  "framework": "nextjs",
+  "installCommand": "cd frontend && corepack pnpm install --frozen-lockfile",
+  "buildCommand": "cd frontend && corepack pnpm build",
+  "devCommand": "cd frontend && corepack pnpm dev"
+}

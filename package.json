@@ -2,8 +2,12 @@
   "name": "susi-viral",
   "private": true,
   "scripts": {
+    "build": "cd frontend && corepack pnpm build",
     "dev": "sh -c 'trap \"kill 0\" EXIT INT TERM; (cd backend && python3.13 -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --env-file .env) & (cd frontend && corepack pnpm dev) & wait'",
     "dev:backend": "cd backend && python3.13 -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --env-file .env",
-    "dev:frontend": "cd frontend && corepack pnpm dev"
+    "dev:frontend": "cd frontend && corepack pnpm dev",
+    "start": "cd frontend && corepack pnpm start",
+    "test:frontend": "cd frontend && corepack pnpm test",
+    "vercel-build": "cd frontend && corepack pnpm build"
   }
 }
