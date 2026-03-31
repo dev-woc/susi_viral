@@ -31,4 +31,4 @@ The repo also includes root-level Vercel-friendly commands:
 - `npm run start`
 - `npm run vercel-build`
 
-And a root [`vercel.json`](/Users/jordanmason/WOC/2026/susi_viral/vercel.json) that makes the frontend build commands explicit.
+And a root [`vercel.json`](/Users/jordanmason/WOC/2026/susi_viral/vercel.json) for the recommended setup where Vercel `Root Directory` is `frontend`.
